@@ -108,10 +108,12 @@ app.get('/api/certificates/create-test', async (req, res) => {
 
 // ROBOLAND AI Chat Route
 app.post('/api/chat', async (req, res) => {
+    console.log("Chat request received!"); // This will show up in Render logs if it hits!
+    
     try {
         const { message } = req.body;
+        if (!message) return res.status(400).json({ error: "Message is required" });
 
-        // Send the request safely from the backend to OpenAI
         const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -119,11 +121,11 @@ app.post('/api/chat', async (req, res) => {
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
             },
             body: JSON.stringify({
-                model: 'gpt-4o-mini', // Fast, smart, and very cheap model
+                model: 'gpt-4o-mini',
                 messages: [
                     {
                         role: 'system',
-                        content: 'You are ROBOLAND AI. You only answer questions about robotics, AI, Linux, electronics, IoT, and autonomous systems. You can engage in normal greetings and casual chat. If a user asks about completely unrelated topics (politics, movies, cooking, etc.), politely decline and steer the conversation back to technology and robotics.'
+                        content: 'You are ROBOLAND AI. Focus on robotics, AI, Linux, electronics, and IoT.'
                     },
                     { role: 'user', content: message }
                 ]
@@ -132,10 +134,11 @@ app.post('/api/chat', async (req, res) => {
 
         const data = await aiResponse.json();
 
-        if (data.choices && data.choices.length > 0) {
+        if (aiResponse.ok) {
             res.status(200).json({ reply: data.choices[0].message.content });
         } else {
-            res.status(500).json({ error: "AI failed to generate a response." });
+            console.error("OpenAI API Error:", data);
+            res.status(500).json({ error: "OpenAI API error." });
         }
 
     } catch (error) {
@@ -143,7 +146,6 @@ app.post('/api/chat', async (req, res) => {
         res.status(500).json({ error: "Server error during chat." });
     }
 });
-
 // Start the Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
