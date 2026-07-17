@@ -115,21 +115,17 @@ app.post('/api/chat', async (req, res) => {
         const { message } = req.body;
         if (!message) return res.status(400).json({ error: "Message is required" });
 
-       // 1. Send the request to Google Gemini API
+       // Use this simplified, reliable body format
         const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            // Change your contents part to this for better "personality"
-body: JSON.stringify({
-    system_instruction: { 
-        parts: [{ text: "You are ROBOLAND AI. You only answer questions about robotics, AI, Linux, electronics, and IoT. Politely decline unrelated topics." }]
-    },
-    contents: [{
-        parts: [{ text: message }]
-    }]
-})
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: "System: You are ROBOLAND AI. Focus on robotics, AI, Linux, electronics, and IoT. Politely decline unrelated topics.\n\nUser: " + message
+                    }]
+                }]
+            })
         });
 
         const data = await aiResponse.json();
