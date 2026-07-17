@@ -101,6 +101,44 @@ app.get('/api/certificates/create-test', async (req, res) => {
     }
 });
 
+// ROBOLAND AI Chat Route
+app.post('/api/chat', async (req, res) => {
+    try {
+        const { message } = req.body;
+
+        // Send the request safely from the backend to OpenAI
+        const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o-mini', // Fast, smart, and very cheap model
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are ROBOLAND AI. You only answer questions about robotics, AI, Linux, electronics, IoT, and autonomous systems. You can engage in normal greetings and casual chat. If a user asks about completely unrelated topics (politics, movies, cooking, etc.), politely decline and steer the conversation back to technology and robotics.'
+                    },
+                    { role: 'user', content: message }
+                ]
+            })
+        });
+
+        const data = await aiResponse.json();
+
+        if (data.choices && data.choices.length > 0) {
+            res.status(200).json({ reply: data.choices[0].message.content });
+        } else {
+            res.status(500).json({ error: "AI failed to generate a response." });
+        }
+
+    } catch (error) {
+        console.error("Chat error:", error);
+        res.status(500).json({ error: "Server error during chat." });
+    }
+});
+
 // Start the Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
