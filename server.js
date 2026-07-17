@@ -21,11 +21,7 @@ app.get('/', (req, res) => {
     res.send('ROBOLAND Backend is successfully running!');
 });
 
-// Start the Server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+
 
 
 // Register a new user
@@ -90,7 +86,7 @@ app.get('/api/certificates/:id', async (req, res) => {
 });
 
 // A temporary route to create test certificates
-app.post('/api/certificates/create-test', async (req, res) => {
+app.get('/api/certificates/create-test', async (req, res) => {
     try {
         const newCert = new Certificate({
             certificateId: "RB-2026-001",
@@ -103,4 +99,10 @@ app.post('/api/certificates/create-test', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: "Error creating test certificate." });
     }
+});
+
+// Start the Server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
