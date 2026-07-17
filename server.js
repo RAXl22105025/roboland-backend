@@ -113,20 +113,18 @@ app.post('/api/chat', async (req, res) => {
         const { message } = req.body;
         if (!message) return res.status(400).json({ error: "Message is required" });
 
-        // Using gemini-3.5-flash, the current stable model
-        const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                system_instruction: { 
-                    parts: [{ text: "You are ROBOLAND AI. Focus on robotics, AI, Linux, electronics, and IoT. Politely decline unrelated topics." }]
-                },
-                contents: [{
-                    parts: [{ text: message }]
-                }]
-            })
-        });
-
+       // Use gemini-flash, which is the official alias for the latest stable model
+const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        contents: [{
+            parts: [{
+                text: "System: You are ROBOLAND AI. Focus on robotics, AI, Linux, electronics, and IoT. Politely decline unrelated topics.\n\nUser: " + message
+            }]
+        }]
+    })
+});
         const data = await aiResponse.json();
 
         if (aiResponse.ok && data.candidates && data.candidates.length > 0) {
