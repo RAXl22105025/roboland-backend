@@ -114,7 +114,7 @@ app.post('/api/chat', async (req, res) => {
         if (!message) return res.status(400).json({ error: "Message is required" });
 
        // Use gemini-flash, which is the official alias for the latest stable model
-const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
