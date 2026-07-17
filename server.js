@@ -105,7 +105,7 @@ app.get('/api/certificates/create-test', async (req, res) => {
         res.status(500).json({ error: "Error creating test certificate." });
     }
 });
-
+//aichatbot
 app.post('/api/chat', async (req, res) => {
     console.log("SUCCESS: Request received at /api/chat"); 
     
@@ -113,26 +113,26 @@ app.post('/api/chat', async (req, res) => {
         const { message } = req.body;
         if (!message) return res.status(400).json({ error: "Message is required" });
 
-        // Change the URL to use gemini-3.5-flash
-const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        contents: [{
-            parts: [{
-                text: "System: You are ROBOLAND AI. Focus on robotics, AI, Linux, electronics, and IoT. Politely decline unrelated topics.\n\nUser: " + message
-            }]
-        }]
-    })
-});
+        // Using gemini-3.5-flash, the current stable model
+        const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                system_instruction: { 
+                    parts: [{ text: "You are ROBOLAND AI. Focus on robotics, AI, Linux, electronics, and IoT. Politely decline unrelated topics." }]
+                },
+                contents: [{
+                    parts: [{ text: message }]
+                }]
+            })
+        });
 
         const data = await aiResponse.json();
 
-        if (aiResponse.ok && data.candidates && data.candidates[0].content) {
+        if (aiResponse.ok && data.candidates && data.candidates.length > 0) {
             const replyText = data.candidates[0].content.parts[0].text;
             res.status(200).json({ reply: replyText });
         } else {
-            // This will show the actual reason Google rejected it in your Render logs
             console.error("Gemini API Error details:", JSON.stringify(data, null, 2));
             res.status(500).json({ error: "Gemini API returned an error." });
         }
