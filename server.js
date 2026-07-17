@@ -107,36 +107,38 @@ app.get('/api/certificates/create-test', async (req, res) => {
 });
 //aichatbot
 app.post('/api/chat', async (req, res) => {
-    console.log("SUCCESS: Request received at /api/chat"); 
-    
     try {
         const { message } = req.body;
-        if (!message) return res.status(400).json({ error: "Message is required" });
+        // Use gemini-2.5-flash as it is the most stable production model currently
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
-       // Use gemini-flash, which is the official alias for the latest stable model
-const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        contents: [{
-            parts: [{
-                text: "System: You are ROBOLAND AI. Focus on robotics, AI, Linux, electronics, and IoT. Politely decline unrelated topics.\n\nUser: " + message
-            }]
-        }]
-    })
-});
+        let attempts = 0;
+        let aiResponse;
+        
+        // Simple retry loop (tries 3 times if it hits a 503)
+        while (attempts < 3) {
+            aiResponse = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: "System: You are ROBOLAND AI. Focus on robotics, AI, Linux, electronics, and IoT. User: " + message }] }]
+                })
+            });
+
+            if (aiResponse.status !== 503) break; // If it's not a server overload, stop retrying
+            
+            attempts++;
+            await new Promise(resolve => setTimeout(resolve, 2000 * attempts)); // Wait 2s, then 4s...
+        }
+
         const data = await aiResponse.json();
-
-        if (aiResponse.ok && data.candidates && data.candidates.length > 0) {
-            const replyText = data.candidates[0].content.parts[0].text;
-            res.status(200).json({ reply: replyText });
+        if (aiResponse.ok && data.candidates) {
+            res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
         } else {
-            console.error("Gemini API Error details:", JSON.stringify(data, null, 2));
-            res.status(500).json({ error: "Gemini API returned an error." });
+            res.status(500).json({ error: "Gemini is busy, try again in a minute." });
         }
     } catch (error) {
-        console.error("CRITICAL Chat error:", error);
-        res.status(500).json({ error: "Server error during chat." });
+        res.status(500).json({ error: "Server error." });
     }
 });
 // Start the Server
