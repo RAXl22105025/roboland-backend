@@ -106,23 +106,20 @@ app.get('/api/certificates/create-test', async (req, res) => {
     }
 });
 
-// ROBOLAND AI Chat Route
 app.post('/api/chat', async (req, res) => {
-    // 1. ADD THIS LOG: This proves the server actually received the call
     console.log("SUCCESS: Request received at /api/chat"); 
     
     try {
         const { message } = req.body;
         if (!message) return res.status(400).json({ error: "Message is required" });
 
-       // Use this simplified, reliable body format
         const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{
                     parts: [{
-                        text: "System: You are ROBOLAND AI. Focus on robotics, AI, Linux, electronics, and IoT. Politely decline unrelated topics.\n\nUser: " + message
+                        text: "You are ROBOLAND AI, an expert in robotics, AI, Linux, electronics, and IoT. Answer the following message:\n" + message
                     }]
                 }]
             })
@@ -130,15 +127,14 @@ app.post('/api/chat', async (req, res) => {
 
         const data = await aiResponse.json();
 
-        // 2. Handle the response from Gemini
-        if (aiResponse.ok && data.candidates && data.candidates.length > 0) {
+        if (aiResponse.ok && data.candidates && data.candidates[0].content) {
             const replyText = data.candidates[0].content.parts[0].text;
             res.status(200).json({ reply: replyText });
         } else {
-            console.error("Gemini API Error details:", JSON.stringify(data));
+            // This will show the actual reason Google rejected it in your Render logs
+            console.error("Gemini API Error details:", JSON.stringify(data, null, 2));
             res.status(500).json({ error: "Gemini API returned an error." });
         }
-
     } catch (error) {
         console.error("CRITICAL Chat error:", error);
         res.status(500).json({ error: "Server error during chat." });
