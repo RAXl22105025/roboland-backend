@@ -11,9 +11,9 @@ const app = express();
 app.use(express.json());
 // Replace app.use(cors()); with this:
 app.use(cors({
-    origin: "*", // Allows requests from any website
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"]
+    origin: "*", 
+    methods: ["GET", "POST", "OPTIONS"], // Add OPTIONS here!
+    allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 // Connect to MongoDB
