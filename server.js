@@ -115,32 +115,32 @@ app.post('/api/chat', async (req, res) => {
         const { message } = req.body;
         if (!message) return res.status(400).json({ error: "Message is required" });
 
-        // Ensure we are using the global fetch (Node 18+)
-        const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+       // 1. Send the request to Google Gemini API
+        const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                model: 'gpt-4o-mini',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'You are ROBOLAND AI. Focus on robotics, AI, Linux, electronics, and IoT.'
-                    },
-                    { role: 'user', content: message }
-                ]
-            })
+            // Change your contents part to this for better "personality"
+body: JSON.stringify({
+    system_instruction: { 
+        parts: [{ text: "You are ROBOLAND AI. You only answer questions about robotics, AI, Linux, electronics, and IoT. Politely decline unrelated topics." }]
+    },
+    contents: [{
+        parts: [{ text: message }]
+    }]
+})
         });
 
         const data = await aiResponse.json();
 
-        if (aiResponse.ok) {
-            res.status(200).json({ reply: data.choices[0].message.content });
+        // 2. Handle the response from Gemini
+        if (aiResponse.ok && data.candidates && data.candidates.length > 0) {
+            const replyText = data.candidates[0].content.parts[0].text;
+            res.status(200).json({ reply: replyText });
         } else {
-            console.error("OpenAI API Error details:", JSON.stringify(data));
-            res.status(500).json({ error: "OpenAI API returned an error." });
+            console.error("Gemini API Error details:", JSON.stringify(data));
+            res.status(500).json({ error: "Gemini API returned an error." });
         }
 
     } catch (error) {
