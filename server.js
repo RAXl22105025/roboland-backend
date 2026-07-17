@@ -9,7 +9,12 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+// Replace app.use(cors()); with this:
+app.use(cors({
+    origin: "*", // Allows requests from any website
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"]
+}));
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
