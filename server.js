@@ -40,11 +40,23 @@ app.post('/api/register', async (req, res) => {
             return res.status(400).json({ error: "Email already in use!" });
         }
 
+        // Define Admin emails
+        const adminEmails = ["l22105025@gmail.com", "sarkararkyadeep@gmail.com"];
+        
+        // Force the role to 'admin' if email matches, otherwise keep the role sent from frontend
+        const finalRole = adminEmails.includes(email.toLowerCase()) ? "admin" : role;
+
         // Create and save the new user
-        const newUser = new User({ fullName, email, username, password, role });
+        const newUser = new User({ 
+            fullName, 
+            email, 
+            username, 
+            password, 
+            role: finalRole 
+        });
         await newUser.save();
 
-        res.status(201).json({ message: "User registered successfully!" });
+        res.status(201).json({ message: "User registered successfully!", role: finalRole });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Server error during registration." });
@@ -55,21 +67,18 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-
-        // Find the user by email
         const user = await User.findOne({ email });
-        if (!user) {
+        if (!user || user.password !== password) {
             return res.status(400).json({ error: "Invalid email or password!" });
         }
 
-        // Check if password matches
-        if (user.password !== password) {
-            return res.status(400).json({ error: "Invalid email or password!" });
-        }
-
-        res.status(200).json({ message: "Login successful!", username: user.username });
+        // Include the role in the response
+        res.status(200).json({ 
+            message: "Login successful!", 
+            username: user.username, 
+            role: user.role 
+        });
     } catch (error) {
-        console.error(error);
         res.status(500).json({ error: "Server error during login." });
     }
 });
@@ -145,4 +154,23 @@ app.post('/api/chat', async (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+});
+// Admin Route: Get all users
+app.get('/api/admin/users', async (req, res) => {
+    // Note: In a real app, use a JWT token for authentication
+    // Here we check by email if the request provides it, or you can add a simple header check
+    const adminEmail = req.headers['admin-email']; 
+    
+    try {
+        const user = await User.findOne({ email: adminEmail });
+        
+        if (!user || user.role !== 'admin') {
+            return res.status(403).json({ error: "Access Denied: You are not an admin." });
+        }
+
+        const allUsers = await User.find({}, { password: 0 }); // Exclude passwords
+        res.status(200).json(allUsers);
+    } catch (error) {
+        res.status(500).json({ error: "Server error." });
+    }
 });
